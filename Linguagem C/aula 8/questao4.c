@@ -1,14 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct {
-    char nome[100];
-} Apostador;
-
-long long soma_fibonacci(int quantidade) {
-    long long anterior = 0, atual = 1;
-    long long proximo, soma = 0;
-    int i;
+int soma_fibonacci(int quantidade) {
+    int i, anterior = 0, atual = 1, proximo, soma = 0;
     for (i = 0; i < quantidade; i++) {
         soma += anterior;
         proximo = anterior + atual;
@@ -18,8 +12,8 @@ long long soma_fibonacci(int quantidade) {
     return soma;
 }
 
-int primo(long long numero) {
-    long long i;
+int primo(int numero) {
+    int i;
     if (numero < 2) {
         return 0;
     }
@@ -32,74 +26,56 @@ int primo(long long numero) {
 }
 
 int main(void) {
-    Apostador *apostadores = malloc(5 * sizeof(Apostador));
-    long long *resultados = malloc(5 * sizeof(long long));
-    int *premiados = calloc(5, sizeof(int));
+    char nomes[5][80];
+    int *resultados = malloc(5 * sizeof(int));
+    int premiados[5] = {0};
     int vencedores[3] = {-1, -1, -1};
-    int i, quantidade, melhor;
+    int i, lugar, quantidade, atende, melhor;
     double media = 0;
-
-    if (apostadores == NULL || resultados == NULL || premiados == NULL) {
-        printf("Erro ao reservar memoria.\n");
-        free(apostadores);
-        free(resultados);
-        free(premiados);
-        return 1;
+    if (resultados == NULL) {
+        exit(1);
     }
     for (i = 0; i < 5; i++) {
-        printf("\nNome do apostador %d: ", i + 1);
-        scanf(" %99[^\n]", apostadores[i].nome);
+        printf("Nome do apostador %d: ", i + 1);
+        scanf(" %79[^\n]", nomes[i]);
         do {
-            printf("Quantidade de termos, de 1 a 45: ");
+            printf("Quantidade de termos (1 a 45): ");
             scanf("%d", &quantidade);
         } while (quantidade < 1 || quantidade > 45);
         resultados[i] = soma_fibonacci(quantidade);
         media += resultados[i];
     }
     media /= 5;
-    melhor = -1;
-    for (i = 0; i < 5; i++) {
-        if (primo(resultados[i])) {
-            if (melhor == -1 || resultados[i] > resultados[melhor]) {
-                melhor = i;
+    /* Em cada rodada, procura o maior resultado que atende ao premio. */
+    for (lugar = 0; lugar < 3; lugar++) {
+        melhor = -1;
+        for (i = 0; i < 5; i++) {
+            if (lugar == 0) {
+                atende = primo(resultados[i]);
+            } else if (lugar == 1) {
+                atende = resultados[i] % 2 == 0;
+            } else {
+                atende = resultados[i] > media;
+            }
+            if (premiados[i] == 0 && atende) {
+                if (melhor == -1 || resultados[i] > resultados[melhor]) {
+                    melhor = i;
+                }
             }
         }
-    }
-    vencedores[0] = melhor;
-    if (melhor != -1) {
-        premiados[melhor] = 1;
-    }
-    melhor = -1;
-    for (i = 0; i < 5; i++) {
-        if (premiados[i] == 0 && resultados[i] % 2 == 0) {
-            if (melhor == -1 || resultados[i] > resultados[melhor]) {
-                melhor = i;
-            }
+        vencedores[lugar] = melhor;
+        if (melhor != -1) {
+            premiados[melhor] = 1;
         }
     }
-    vencedores[1] = melhor;
-    if (melhor != -1) {
-        premiados[melhor] = 1;
-    }
-    melhor = -1;
-    for (i = 0; i < 5; i++) {
-        if (premiados[i] == 0 && resultados[i] > media) {
-            if (melhor == -1 || resultados[i] > resultados[melhor]) {
-                melhor = i;
-            }
-        }
-    }
-    vencedores[2] = melhor;
     printf("\n");
-    for (i = 0; i < 3; i++) {
-        if (vencedores[i] != -1) {
-            printf("%do lugar: %s\n", i + 1, apostadores[vencedores[i]].nome);
+    for (lugar = 0; lugar < 3; lugar++) {
+        if (vencedores[lugar] == -1) {
+            printf("%do lugar: sem vencedor.\n", lugar + 1);
         } else {
-            printf("%do lugar: sem vencedor.\n", i + 1);
+            printf("%do lugar: %s\n", lugar + 1, nomes[vencedores[lugar]]);
         }
     }
-    free(apostadores);
     free(resultados);
-    free(premiados);
     return 0;
 }

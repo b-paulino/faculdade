@@ -16,6 +16,7 @@ void ordenar(int *vetor, int quantidade) {
 
 void mostrar(int *vetor, int quantidade) {
     int i;
+    ordenar(vetor, quantidade);
     for (i = 0; i < quantidade; i++) {
         printf("%d ", vetor[i]);
     }
@@ -28,16 +29,13 @@ void mostrar(int *vetor, int quantidade) {
 int main(void) {
     int *pares = malloc(10 * sizeof(int));
     int *impares = malloc(10 * sizeof(int));
-    int i, numero;
-    int qtd_pares = 0, qtd_impares = 0;
+    int i, numero, qtd_pares = 0, qtd_impares = 0;
     if (pares == NULL || impares == NULL) {
-        printf("Erro ao reservar memoria.\n");
-        free(pares);
-        free(impares);
-        return 1;
+        printf("Memoria insuficiente.\n");
+        exit(1);
     }
     for (i = 0; i < 10; i++) {
-        printf("Digite o numero %d: ", i + 1);
+        printf("Numero %d: ", i + 1);
         scanf("%d", &numero);
         if (numero > 0 && numero % 2 == 0) {
             pares[qtd_pares] = numero;
@@ -47,11 +45,9 @@ int main(void) {
             qtd_impares++;
         }
     }
-    ordenar(pares, qtd_pares);
-    ordenar(impares, qtd_impares);
-    printf("\nPares positivos em ordem crescente:\n");
+    printf("\nPares positivos:\n");
     mostrar(pares, qtd_pares);
-    printf("\nImpares negativos em ordem crescente:\n");
+    printf("\nImpares negativos:\n");
     mostrar(impares, qtd_impares);
     free(pares);
     free(impares);

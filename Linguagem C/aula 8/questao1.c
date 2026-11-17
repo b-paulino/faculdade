@@ -2,132 +2,113 @@
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct {
-    char nome[100];
-    double preco;
-} Produto;
-
-void ordenar_numeros(int *vetor, int quantidade) {
-    int i, j, auxiliar;
-    for (i = 0; i < quantidade - 1; i++) {
-        for (j = i + 1; j < quantidade; j++) {
-            if (vetor[i] < vetor[j]) {
-                auxiliar = vetor[i];
-                vetor[i] = vetor[j];
-                vetor[j] = auxiliar;
-            }
+/* Retorna zero se esse numero ja foi contado antes. */
+int contar(int *numeros, int posicao) {
+    int j, quantidade = 0;
+    for (j = 0; j < posicao; j++) {
+        if (numeros[j] == numeros[posicao]) {
+            return 0;
         }
     }
-}
-
-void ordenar_produtos(Produto *produtos, int quantidade) {
-    int i, j;
-    Produto auxiliar;
-    for (i = 0; i < quantidade - 1; i++) {
-        for (j = i + 1; j < quantidade; j++) {
-            if (strcmp(produtos[i].nome, produtos[j].nome) > 0) {
-                auxiliar = produtos[i];
-                produtos[i] = produtos[j];
-                produtos[j] = auxiliar;
-            }
+    for (j = 0; j < 12; j++) {
+        if (numeros[j] == numeros[posicao]) {
+            quantidade++;
         }
     }
+    return quantidade;
 }
 
 int main(void) {
     int *numeros = malloc(12 * sizeof(int));
-    int *distintos = malloc(12 * sizeof(int));
-    int *ocorrencias = calloc(12, sizeof(int));
     int *pares = malloc(12 * sizeof(int));
-    Produto *produtos = NULL;
-    int i, j, posicao;
-    int qtd_distintos = 0, qtd_pares = 0;
-    int qtd_produtos = 0, cadastrados = 0;
+    int ocorrencias[12];
+    int i, j, total = 0, qtd_pares = 0, auxiliar;
+    char **nomes, *nome_auxiliar;
+    double *precos, preco_auxiliar;
 
-    if (numeros == NULL || distintos == NULL ||
-        ocorrencias == NULL || pares == NULL) {
-        printf("Erro ao reservar memoria.\n");
-        free(numeros);
-        free(distintos);
-        free(ocorrencias);
-        free(pares);
-        return 1;
+    if (numeros == NULL || pares == NULL) {
+        printf("Memoria insuficiente.\n");
+        exit(1);
     }
-
     for (i = 0; i < 12; i++) {
-        printf("Digite o numero %d: ", i + 1);
+        printf("Numero %d: ", i + 1);
         scanf("%d", &numeros[i]);
-        posicao = -1;
-        for (j = 0; j < qtd_distintos; j++) {
-            if (numeros[i] == distintos[j]) {
-                posicao = j;
-            }
-        }
-        if (posicao == -1) {
-            distintos[qtd_distintos] = numeros[i];
-            ocorrencias[qtd_distintos] = 1;
-            qtd_distintos++;
-        } else {
-            ocorrencias[posicao]++;
-        }
     }
-
-    for (i = 0; i < qtd_distintos; i++) {
-        if (ocorrencias[i] % 2 == 0) {
-            pares[qtd_pares] = distintos[i];
+    for (i = 0; i < 12; i++) {
+        ocorrencias[i] = contar(numeros, i);
+        if (ocorrencias[i] > 0 && ocorrencias[i] % 2 == 0) {
+            pares[qtd_pares] = numeros[i];
             qtd_pares++;
-        } else if (distintos[i] > 0) {
-            qtd_produtos += distintos[i];
+        } else if (ocorrencias[i] % 2 != 0 && numeros[i] > 0) {
+            if (numeros[i] > 1000 - total) {
+                printf("Esta versao aceita ate 1000 produtos.\n");
+                exit(1);
+            }
+            total += numeros[i];
         }
     }
-    if (qtd_produtos > 0) {
-        produtos = malloc((size_t) qtd_produtos * sizeof(Produto));
-        if (produtos == NULL) {
-            printf("Erro ao reservar memoria.\n");
-            free(numeros);
-            free(distintos);
-            free(ocorrencias);
-            free(pares);
-            return 1;
-        }
+    /* Uma posicao extra evita pedir malloc(0) quando total for zero. */
+    nomes = malloc((total + 1) * sizeof(char *));
+    precos = malloc((total + 1) * sizeof(double));
+    if (nomes == NULL || precos == NULL) {
+        exit(1);
     }
-    for (i = 0; i < qtd_distintos; i++) {
-        if (ocorrencias[i] % 2 != 0 && distintos[i] > 0) {
-            printf("\nCadastre %d produtos:\n", distintos[i]);
-            for (j = 0; j < distintos[i]; j++) {
-                printf("Nome do produto: ");
-                scanf(" %99[^\n]", produtos[cadastrados].nome);
-                do {
-                    printf("Preco unitario: ");
-                    scanf("%lf", &produtos[cadastrados].preco);
-                } while (produtos[cadastrados].preco < 0);
-                cadastrados++;
+    for (i = 0; i < total; i++) {
+        nomes[i] = malloc(80 * sizeof(char));
+        if (nomes[i] == NULL) {
+            exit(1);
+        }
+        printf("Nome do produto %d: ", i + 1);
+        scanf(" %79[^\n]", nomes[i]);
+        do {
+            printf("Preco: ");
+            scanf("%lf", &precos[i]);
+        } while (precos[i] < 0);
+    }
+    for (i = 0; i < total - 1; i++) {
+        for (j = i + 1; j < total; j++) {
+            if (strcmp(nomes[i], nomes[j]) > 0) {
+                nome_auxiliar = nomes[i];
+                nomes[i] = nomes[j];
+                nomes[j] = nome_auxiliar;
+                preco_auxiliar = precos[i];
+                precos[i] = precos[j];
+                precos[j] = preco_auxiliar;
             }
         }
     }
-    ordenar_numeros(pares, qtd_pares);
-    ordenar_produtos(produtos, qtd_produtos);
+    for (i = 0; i < qtd_pares - 1; i++) {
+        for (j = i + 1; j < qtd_pares; j++) {
+            if (pares[i] < pares[j]) {
+                auxiliar = pares[i];
+                pares[i] = pares[j];
+                pares[j] = auxiliar;
+            }
+        }
+    }
     printf("\nNumeros informados:\n");
     for (i = 0; i < 12; i++) {
         printf("%d ", numeros[i]);
     }
-    printf("\n\nOcorrencias:\n");
-    for (i = 0; i < qtd_distintos; i++) {
-        printf("%d aparece %d vez(es).\n", distintos[i], ocorrencias[i]);
+    printf("\nOcorrencias:\n");
+    for (i = 0; i < 12; i++) {
+        if (ocorrencias[i] > 0) {
+            printf("%d: %d vez(es)\n", numeros[i], ocorrencias[i]);
+        }
     }
     printf("\nProdutos em ordem alfabetica:\n");
-    for (i = 0; i < qtd_produtos; i++) {
-        printf("%s - R$ %.2f\n", produtos[i].nome, produtos[i].preco);
+    for (i = 0; i < total; i++) {
+        printf("%s: R$ %.2f\n", nomes[i], precos[i]);
+        free(nomes[i]);
     }
-    printf("\nNumeros com quantidade par de ocorrencias:\n");
+    printf("\nNumeros com ocorrencias pares:\n");
     for (i = 0; i < qtd_pares; i++) {
         printf("%d ", pares[i]);
     }
     printf("\n");
     free(numeros);
-    free(distintos);
-    free(ocorrencias);
     free(pares);
-    free(produtos);
+    free(nomes);
+    free(precos);
     return 0;
 }

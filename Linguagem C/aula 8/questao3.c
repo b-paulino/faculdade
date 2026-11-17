@@ -1,10 +1,6 @@
-/* Veja no README.md a interpretacao adotada para esta questao. */
+/* A interpretacao das correspondencias esta explicada no README. */
 #include <stdio.h>
 #include <stdlib.h>
-
-typedef struct {
-    char nome[100];
-} Animal;
 
 int primo(int numero) {
     int i;
@@ -21,98 +17,74 @@ int primo(int numero) {
 
 int main(void) {
     int *numeros = malloc(15 * sizeof(int));
-    int *distintos = malloc(15 * sizeof(int));
-    int *ocorrencias = calloc(15, sizeof(int));
-    Animal *animais = NULL;
-    int i, j, posicao;
-    int qtd_distintos = 0;
-    int qtd_animais = 0, cadastrados = 0;
-    int quantidade, encontrou = 0;
-
-    if (numeros == NULL || distintos == NULL || ocorrencias == NULL) {
-        printf("Erro ao reservar memoria.\n");
-        free(numeros);
-        free(distintos);
-        free(ocorrencias);
-        return 1;
+    int ocorrencias[15];
+    int i, j, repetido, total = 0;
+    char **animais;
+    if (numeros == NULL) {
+        exit(1);
     }
     for (i = 0; i < 15; i++) {
-        printf("Digite o numero %d: ", i + 1);
+        printf("Numero %d: ", i + 1);
         scanf("%d", &numeros[i]);
-        posicao = -1;
-        for (j = 0; j < qtd_distintos; j++) {
-            if (numeros[i] == distintos[j]) {
-                posicao = j;
-            }
-        }
-        if (posicao == -1) {
-            distintos[qtd_distintos] = numeros[i];
-            ocorrencias[qtd_distintos] = 1;
-            qtd_distintos++;
-        } else {
-            ocorrencias[posicao]++;
-        }
     }
     printf("\nNumeros repetidos:\n");
-    for (i = 0; i < qtd_distintos; i++) {
-        if (ocorrencias[i] > 1) {
-            printf("%d: %d ocorrencias\n", distintos[i], ocorrencias[i]);
-            if (primo(distintos[i]) && ocorrencias[i] % 2 != 0) {
-                qtd_animais += distintos[i] * ocorrencias[i];
+    for (i = 0; i < 15; i++) {
+        ocorrencias[i] = 0;
+        for (j = 0; j < 15; j++) {
+            if (numeros[i] == numeros[j]) {
+                ocorrencias[i]++;
+            }
+        }
+        /* Conta em todas as posicoes, mas processa cada numero uma vez. */
+        repetido = 0;
+        for (j = 0; j < i; j++) {
+            if (numeros[i] == numeros[j]) {
+                repetido = 1;
+            }
+        }
+        if (repetido == 0 && ocorrencias[i] > 1) {
+            printf("%d: %d ocorrencias\n", numeros[i], ocorrencias[i]);
+            if (primo(numeros[i]) && ocorrencias[i] % 2 != 0) {
+                if (numeros[i] > (1000 - total) / ocorrencias[i]) {
+                    printf("Esta versao aceita ate 1000 animais.\n");
+                    exit(1);
+                }
+                total += numeros[i] * ocorrencias[i];
             }
         }
     }
-    if (qtd_animais > 0) {
-        animais = malloc((size_t) qtd_animais * sizeof(Animal));
-        if (animais == NULL) {
-            printf("Erro ao reservar memoria.\n");
-            free(numeros);
-            free(distintos);
-            free(ocorrencias);
-            return 1;
-        }
+    animais = malloc((total + 1) * sizeof(char *));
+    if (animais == NULL) {
+        exit(1);
     }
-    for (i = 0; i < qtd_distintos; i++) {
-        if (ocorrencias[i] > 1 && primo(distintos[i]) &&
-            ocorrencias[i] % 2 != 0) {
-            quantidade = distintos[i] * ocorrencias[i];
-            printf("\nNumero %d: cadastre %d nomes de animais.\n",
-                   distintos[i], quantidade);
-            for (j = 0; j < quantidade; j++) {
-                printf("Animal %d: ", cadastrados + 1);
-                scanf(" %99[^\n]", animais[cadastrados].nome);
-                cadastrados++;
-            }
+    printf("\nTotal de animais para cadastrar: %d\n", total);
+    for (i = 0; i < total; i++) {
+        animais[i] = malloc(80 * sizeof(char));
+        if (animais[i] == NULL) {
+            exit(1);
         }
+        printf("Animal %d: ", i + 1);
+        scanf(" %79[^\n]", animais[i]);
     }
-    printf("\nAnimais cadastrados pelas somas dos primos:\n");
-    for (i = 0; i < qtd_animais; i++) {
-        printf("%d. %s\n", i + 1, animais[i].nome);
+    printf("\nAnimais cadastrados:\n");
+    for (i = 0; i < total; i++) {
+        printf("%d. %s\n", i + 1, animais[i]);
     }
     printf("\nCorrespondencias pelas posicoes:\n");
     for (i = 0; i < 15; i++) {
-        posicao = -1;
-        for (j = 0; j < qtd_distintos; j++) {
-            if (numeros[i] == distintos[j]) {
-                posicao = j;
-            }
-        }
-        if (ocorrencias[posicao] % 2 == 0) {
-            encontrou = 1;
-            printf("Numero %d, posicao %d: ", numeros[i], i + 1);
-            if (i < qtd_animais) {
-                printf("%s\n", animais[i].nome);
+        if (ocorrencias[i] % 2 == 0) {
+            printf("Posicao %d, numero %d: ", i + 1, numeros[i]);
+            if (i < total) {
+                printf("%s\n", animais[i]);
             } else {
                 printf("Nao existe correspondencia.\n");
             }
         }
     }
-    if (encontrou == 0) {
-        printf("Nenhum numero com quantidade par de ocorrencias.\n");
+    for (i = 0; i < total; i++) {
+        free(animais[i]);
     }
-    free(numeros);
-    free(distintos);
-    free(ocorrencias);
     free(animais);
+    free(numeros);
     return 0;
 }

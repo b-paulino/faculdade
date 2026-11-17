@@ -1,28 +1,22 @@
-/* Veja no README.md a limitacao da regra de IDs do enunciado. */
+/* A regra incompleta dos IDs esta explicada no README. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
-typedef struct {
-    char nome[100];
-    int idade;
-    long double id;
-} Participante;
-
-long double fatorial(int numero) {
-    long double resultado = 1;
+double fatorial(int numero) {
     int i;
+    double resultado = 1;
     for (i = 2; i <= numero; i++) {
         resultado *= i;
     }
     return resultado;
 }
 
-int id_repetido(Participante *participantes, int quantidade, long double id) {
+int repetido(double *ids, int quantidade, double id) {
     int i;
     for (i = 0; i < quantidade; i++) {
-        if (participantes[i].id == id) {
+        if (ids[i] == id) {
             return 1;
         }
     }
@@ -30,128 +24,93 @@ int id_repetido(Participante *participantes, int quantidade, long double id) {
 }
 
 double media_ponderada(double *valores, int quantidade) {
-    double soma = 0, soma_pesos = 0;
     int i;
+    double soma = 0, pesos = 0;
     for (i = 0; i < quantidade; i++) {
         soma += valores[i] * (i + 1);
-        soma_pesos += i + 1;
+        pesos += i + 1;
     }
-    return soma / soma_pesos;
-}
-
-void ordenar(Participante *participantes, double **matriz) {
-    Participante auxiliar;
-    double *linha_auxiliar;
-    int i, j;
-    for (i = 0; i < 3; i++) {
-        for (j = i + 1; j < 4; j++) {
-            if (strcmp(participantes[i].nome, participantes[j].nome) > 0) {
-                auxiliar = participantes[i];
-                participantes[i] = participantes[j];
-                participantes[j] = auxiliar;
-                linha_auxiliar = matriz[i];
-                matriz[i] = matriz[j];
-                matriz[j] = linha_auxiliar;
-            }
-        }
-    }
-}
-
-void liberar(Participante *participantes, double **matriz) {
-    int i;
-    if (matriz != NULL) {
-        for (i = 0; i < 4; i++) {
-            free(matriz[i]);
-        }
-    }
-    free(matriz);
-    free(participantes);
+    return soma / pesos;
 }
 
 int main(void) {
-    Participante *participantes = malloc(4 * sizeof(Participante));
-    double **matriz = calloc(4, sizeof(double *));
-    int quantidade, i, j;
-    int qtd_lados = 0;
-    double lados[2];
-    double diagonal = 0, media, tolerancia;
-
-    if (participantes == NULL || matriz == NULL) {
-        printf("Erro ao reservar memoria.\n");
-        liberar(participantes, matriz);
-        return 1;
+    char nomes[4][80], nome_auxiliar[80];
+    double ids[4], id_auxiliar, lados[2], diagonal = 0, media;
+    double **valores = malloc(4 * sizeof(double *));
+    double *linha_auxiliar;
+    int i, j, idade, quantidade, qtd_lados = 0;
+    if (valores == NULL) {
+        exit(1);
     }
     do {
-        printf("Quantidade de valores por participante: ");
+        printf("Quantidade de valores por pessoa (1 a 20): ");
         scanf("%d", &quantidade);
-    } while (quantidade <= 0);
+    } while (quantidade < 1 || quantidade > 20);
 
     for (i = 0; i < 4; i++) {
-        matriz[i] = malloc((size_t) quantidade * sizeof(double));
-        if (matriz[i] == NULL) {
-            printf("Erro ao reservar memoria.\n");
-            liberar(participantes, matriz);
-            return 1;
+        valores[i] = malloc(quantidade * sizeof(double));
+        if (valores[i] == NULL) {
+            exit(1);
         }
-    }
-    for (i = 0; i < 4; i++) {
-        printf("\nNome do participante %d: ", i + 1);
-        scanf(" %99[^\n]", participantes[i].nome);
+        printf("Nome do participante %d: ", i + 1);
+        scanf(" %79[^\n]", nomes[i]);
         do {
-            printf("Idade, de 0 a 20 nesta versao: ");
-            scanf("%d", &participantes[i].idade);
-        } while (participantes[i].idade < 0 || participantes[i].idade > 20);
-
-        participantes[i].id = fatorial(participantes[i].idade) / 2;
-        if (id_repetido(participantes, i, participantes[i].id)) {
-            participantes[i].id = powl(
-                fatorial(participantes[i].idade / 2), quantidade
-            );
+            printf("Idade (0 a 20 nesta versao): ");
+            scanf("%d", &idade);
+        } while (idade < 0 || idade > 20);
+        ids[i] = fatorial(idade) / 2;
+        if (repetido(ids, i, ids[i])) {
+            ids[i] = pow(fatorial(idade / 2), quantidade);
         }
-        if (!isfinite(participantes[i].id)) {
-            printf("O ID ultrapassou o limite numerico.\n");
-            liberar(participantes, matriz);
-            return 1;
-        }
-        if (id_repetido(participantes, i, participantes[i].id)) {
-            printf("A formula alternativa tambem gerou um ID repetido.\n");
-            printf("O enunciado precisa definir outra regra de desempate.\n");
-            liberar(participantes, matriz);
-            return 1;
+        if (repetido(ids, i, ids[i])) {
+            printf("ID ainda repetido: falta outra regra no enunciado.\n");
+            exit(1);
         }
         for (j = 0; j < quantidade; j++) {
             printf("Valor %d: ", j + 1);
-            scanf("%lf", &matriz[i][j]);
-            if (matriz[i][j] >= 0 && qtd_lados < 2) {
-                lados[qtd_lados] = matriz[i][j];
+            scanf("%lf", &valores[i][j]);
+            if (valores[i][j] >= 0 && qtd_lados < 2) {
+                lados[qtd_lados] = valores[i][j];
                 qtd_lados++;
             }
         }
     }
-    ordenar(participantes, matriz);
-    if (qtd_lados == 2) {
-        diagonal = hypot(lados[0], lados[1]);
-    } else {
-        printf("\nNao foi possivel calcular a diagonal.\n");
-    }
-    printf("\n---------- CLASSIFICACAO FINAL ----------\n");
-    for (i = 0; i < 4; i++) {
-        printf("%s: ", participantes[i].nome);
-        if (qtd_lados < 2) {
-            printf("sem classificacao, diagonal indisponivel.\n");
-        } else {
-            media = media_ponderada(matriz[i], quantidade);
-            tolerancia = 0.000000001 *
-                         fmax(1.0, fmax(fabs(media), fabs(diagonal)));
-            if (fabs(media - diagonal) <= tolerancia) {
-                printf("SOBRE A DIAGONAL\n");
-            } else if (media > diagonal) {
-                printf("ACIMA DA DIAGONAL\n");
-            } else {
-                printf("ABAIXO DA DIAGONAL\n");
+    /* Troca o nome, o ID e a linha de valores juntos. */
+    for (i = 0; i < 3; i++) {
+        for (j = i + 1; j < 4; j++) {
+            if (strcmp(nomes[i], nomes[j]) > 0) {
+                strcpy(nome_auxiliar, nomes[i]);
+                strcpy(nomes[i], nomes[j]);
+                strcpy(nomes[j], nome_auxiliar);
+                id_auxiliar = ids[i];
+                ids[i] = ids[j];
+                ids[j] = id_auxiliar;
+                linha_auxiliar = valores[i];
+                valores[i] = valores[j];
+                valores[j] = linha_auxiliar;
             }
         }
     }
-    liberar(participantes, matriz);
+    if (qtd_lados == 2) {
+        diagonal = sqrt(lados[0] * lados[0] + lados[1] * lados[1]);
+    } else {
+        printf("\nNao foi possivel calcular a diagonal.\n");
+    }
+    printf("\nCLASSIFICACAO FINAL\n");
+    for (i = 0; i < 4; i++) {
+        printf("%s: ", nomes[i]);
+        media = media_ponderada(valores[i], quantidade);
+        if (qtd_lados < 2) {
+            printf("sem classificacao.\n");
+        } else if (fabs(media - diagonal) < 0.000001) {
+            printf("SOBRE A DIAGONAL\n");
+        } else if (media > diagonal) {
+            printf("ACIMA DA DIAGONAL\n");
+        } else {
+            printf("ABAIXO DA DIAGONAL\n");
+        }
+        free(valores[i]);
+    }
+    free(valores);
     return 0;
 }
